@@ -13,6 +13,33 @@ auto print(FarBuffer const& buf) {
     std::cout << "\n";
 }
 
+auto consume_buffer(FarBuffer& buf) {
+
+    uint8_t n;
+    size_t consumed;
+    do {
+        consumed = buf.consume({&n, &n + 1});
+        print(buf);
+    }
+    while (consumed);
+}
+
+auto fill_buffer() {
+
+    uint8_t c = 'A';
+    size_t written;
+    auto buf = FarBuffer { 52 };
+
+    do {
+        written = buf.append({ &c, &c + 1 });
+        c += 1;
+    }
+    while (written);
+
+    print(buf);
+    consume_buffer(buf);
+}
+
 auto main() -> int {
 
     auto buf = FarBuffer { 38 };
@@ -26,6 +53,8 @@ auto main() -> int {
         "Incorrect number of bytes in buffer after write!");
 
     print(buf);
+
+    fill_buffer();
 
     return 0;
 }

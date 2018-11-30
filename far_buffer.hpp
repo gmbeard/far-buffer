@@ -110,7 +110,7 @@ template<typename Alloc>
 using ToFarBufferBlockAlloc = typename 
     std::allocator_traits<Alloc>::template rebind_alloc<FarBufferBlock>;
 
-inline auto consume(FarBufferBlock* block, size_t bytes) {
+inline auto consume_from_block(FarBufferBlock* block, size_t bytes) {
     assert(block && "block is null");
     assert(block->data && "block's data is null");
     assert(bytes <= block->consumed &&
@@ -391,9 +391,24 @@ struct BasicFarBuffer {
         return control_block()->length;
     }
 
+    auto append(Span<uint8_t const> data) noexcept -> size_t {
+        auto at = end();
+        auto from = data.begin();
+
+        auto n = 
+            std::min(data.size(), capacity() - size());
+
+        control_block()->consumed += n;
+        for (auto i = n; i; --i) {
+            *at++ = *from++;
+        }
+        
+        return n;
+    }
+
     auto fill(Span<uint8_t const> data) noexcept -> size_t {
         control_block()->consumed = 
-            std::min(data.size(), control_block()->length);
+            std::min(data.size(), capacity());
 
         auto in_first = data.begin();
         for (auto& b : *this) {
@@ -401,6 +416,23 @@ struct BasicFarBuffer {
         }
 
         return in_first - data.begin();
+    }
+
+    auto consume(Span<uint8_t> target) noexcept -> size_t {
+        
+        auto out_it = target.begin();
+        auto from_it = begin();
+        while (out_it != target.end() && from_it != end()) {
+            *out_it++ = *from_it++;
+        }
+
+        auto read = out_it - target.begin();
+        consume_from_block(control_block(), read);
+        return read;
+    }
+
+    auto clear() noexcept {
+        consume_from_block(control_block(), size());
     }
 
 private:
