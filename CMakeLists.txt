@@ -4,6 +4,12 @@ project(FarBuffer CXX)
 
 add_library(FarBuffer INTERFACE)
 
+option(
+    FARBUFFER_ENABLE_TESTS
+    "Enable ${PROJECT_NAME} tests"
+    OFF
+)
+
 target_include_directories(
     FarBuffer
     INTERFACE
@@ -16,6 +22,11 @@ target_compile_features(
     INTERFACE
         cxx_decltype_auto
 )
+
+if(FARBUFFER_ENABLE_TESTS)
+    enable_testing()
+    add_subdirectory(tests)
+endif()
 
 install(
     TARGETS
